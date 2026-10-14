@@ -55,15 +55,19 @@ const MESSAGES = {
   saveTimeout: `Тайм-аут при сохранении: сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Данные в форме сохранены, попробуйте ещё раз.`,
   saveOk: "Книга обновлена!",
   deleteConfirm: (title) => `Удалить книгу «${title}»?`,
-  deleting: "Удаляем книгу…",
-  deleteError: "Не удалось удалить книгу. Карточка осталась, попробуйте ещё раз.",
-  deleteTimeout: `Тайм-аут при удалении: сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Карточка осталась, попробуйте ещё раз.`,
+  deleting: (title) => `Удаляем «${title}»…`,
+  deleteOk: (id) => `Книга удалена. Номер: #${id}`,
+  deleteError: (title) => `Не удалось удалить «${title}». Карточка возвращена, попробуйте ещё раз.`,
+  deleteTimeout: (title) => `Тайм-аут при удалении «${title}»: сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Карточка возвращена.`,
+  deletePending: "Удаление этой книги уже выполняется.",
   editStarted: (id) => `Редактирование книги #${id}. Измените поля и нажмите «Сохранить».`,
   editCancelled: "Редактирование отменено.",
 };
 
 let currentBooks = [];
 let editingId = null;
+
+const pendingDeletes = new Set();
 
 function isTimeoutError(error) {
   return error instanceof DOMException && error.name === "TimeoutError";
@@ -265,7 +269,14 @@ async function loadBooks() {
 }
 
 async function deleteBook(id, button) {
-  const book = currentBooks.find((item) => String(item.id) === String(id));
+  const key = String(id);
+
+  if (pendingDeletes.has(key)) {
+    setCollectionStatus(MESSAGES.deletePending, "info");
+    return;
+  }
+
+  const book = currentBooks.find((item) => String(item.id) === key);
   if (!book) {
     return;
   }
@@ -274,8 +285,17 @@ async function deleteBook(id, button) {
     return;
   }
 
-  button.disabled = true;
-  setCollectionStatus(MESSAGES.deleting);
+  const snapshot = currentBooks.slice();
+  const removedTitle = book.title;
+
+  pendingDeletes.add(key);
+  if (button) {
+    button.disabled = true;
+  }
+
+  currentBooks = currentBooks.filter((item) => String(item.id) !== key);
+  renderBooks(currentBooks);
+  setCollectionStatus(MESSAGES.deleting(removedTitle));
 
   try {
     const response = await fetchWithTimeout(`${API_URL}/${id}`, { method: "DELETE" });
@@ -284,19 +304,30 @@ async function deleteBook(id, button) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    if (String(editingId) === String(id)) {
+    if (String(editingId) === key) {
       cancelEdit();
     }
 
-    setCollectionStatus("");
-    await loadBooks();
+    setCollectionStatus(MESSAGES.deleteOk(key), "success");
   } catch (error) {
     console.error("Не удалось удалить книгу", error);
 
-    const text = isTimeoutError(error) ? MESSAGES.deleteTimeout : MESSAGES.deleteError;
+    currentBooks = snapshot;
+    renderBooks(currentBooks);
+
+    const text = isTimeoutError(error)
+      ? MESSAGES.deleteTimeout(removedTitle)
+      : MESSAGES.deleteError(removedTitle);
     setCollectionStatus(text, "error");
   } finally {
-    button.disabled = false;
+    pendingDeletes.delete(key);
+
+    const freshButton = collectionEl.querySelector(
+      `button[data-action="delete"][data-id="${key}"]`
+    );
+    if (freshButton) {
+      freshButton.disabled = false;
+    }
   }
 }
 

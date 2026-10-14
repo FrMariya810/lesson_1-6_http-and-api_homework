@@ -1,14 +1,6 @@
 {
   "books": [
     {
-      "id": "1",
-      "title": "Мастер и Маргарита",
-      "author": "Михаил Булгаков",
-      "genre": "роман",
-      "year": 1967,
-      "available": true
-    },
-    {
       "id": "2",
       "title": "Преступление и наказание",
       "author": "Фёдор Достоевский",
@@ -31,6 +23,14 @@
       "year": 1994,
       "available": true,
       "id": "HumFIN6zmaQ"
+    },
+    {
+      "title": "Мастер и Маргарита",
+      "author": "Михаил Булгаков",
+      "genre": "роман",
+      "year": 1967,
+      "available": true,
+      "id": "1"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
