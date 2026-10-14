@@ -62,8 +62,8 @@
       <section class="panel panel--form" aria-labelledby="form-title">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Новая запись</p>
-            <h2 class="panel__title" id="form-title">Добавить книгу</h2>
+            <p class="panel__eyebrow" data-ui="form-eyebrow">Новая запись</p>
+            <h2 class="panel__title" id="form-title" data-ui="form-title">Добавить книгу</h2>
           </div>
         </div>
 
@@ -138,6 +138,10 @@
           </div>
 
           <div class="entry-form__actions">
+            <button class="button button--secondary" type="button" data-action="cancel-edit" hidden>
+              Отмена
+            </button>
+
             <button class="button button--primary" type="submit" data-action="submit">
               Отправить в API
             </button>

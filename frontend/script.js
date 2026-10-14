@@ -11,7 +11,10 @@ const collectionStatus = document.querySelector('[data-ui="collection-status"]')
 const emptyEl = document.querySelector('[data-ui="empty"]');
 const bookForm = document.querySelector('[data-form="entry"]');
 const submitButton = document.querySelector('[data-action="submit"]');
+const cancelEditButton = document.querySelector('[data-action="cancel-edit"]');
 const submitStatus = document.querySelector('[data-ui="submit-status"]');
+const formEyebrow = document.querySelector('[data-ui="form-eyebrow"]');
+const formTitle = document.querySelector('[data-ui="form-title"]');
 const reloadButton = document.querySelector('[data-action="reload"]');
 
 const STATE = {
@@ -21,6 +24,19 @@ const STATE = {
   ERROR: "error",
 };
 
+const FORM_MODES = {
+  CREATE: {
+    eyebrow: "Новая запись",
+    title: "Добавить книгу",
+    submit: "Отправить в API",
+  },
+  EDIT: {
+    eyebrow: "Редактирование",
+    title: "Изменить книгу",
+    submit: "Сохранить изменения",
+  },
+};
+
 const MESSAGES = {
   loading: { title: "Загрузка", text: "Запрашиваем книги у сервера…" },
   empty: { title: "Пусто", text: "Сервер вернул пустой список." },
@@ -28,12 +44,18 @@ const MESSAGES = {
   submitting: "Отправляем книгу…",
   submitError: "Не удалось отправить книгу. Данные в форме сохранены, попробуйте ещё раз.",
   submitOk: "Книга добавлена!",
+  saving: "Сохраняем изменения…",
+  saveError: "Не удалось сохранить изменения. Данные в форме сохранены, попробуйте ещё раз.",
+  saveOk: "Книга обновлена!",
   deleteConfirm: (title) => `Удалить книгу «${title}»?`,
   deleting: "Удаляем книгу…",
   deleteError: "Не удалось удалить книгу. Карточка осталась, попробуйте ещё раз.",
+  editStarted: (id) => `Редактирование книги #${id}. Измените поля и нажмите «Сохранить».`,
+  editCancelled: "Редактирование отменено.",
 };
 
 let currentBooks = [];
+let editingId = null;
 
 function setState(state, { title = "", text = "" } = {}) {
   statusEl.dataset.state = state;
@@ -60,16 +82,26 @@ function setCollectionStatus(text, variant = "info") {
   collectionStatus.dataset.state = variant;
 }
 
+function applyFormMode(mode) {
+  formEyebrow.textContent = mode.eyebrow;
+  formTitle.textContent = mode.title;
+  submitButton.textContent = mode.submit;
+  cancelEditButton.hidden = mode === FORM_MODES.CREATE;
+}
+
 function renderBooks(books) {
   collectionEl.replaceChildren();
 
   books.forEach((book) => {
     const card = document.createElement("article");
     card.className = "book-card";
+    if (String(book.id) === String(editingId)) {
+      card.classList.add("book-card--editing");
+    }
 
     const heading = document.createElement("div");
     heading.className = "book-card__heading";
-    
+
     const id = document.createElement("span");
     id.className = "book-card__id";
     id.textContent = `#${book.id}`;
@@ -91,10 +123,17 @@ function renderBooks(books) {
     badge.textContent = book.available ? "В наличии" : "Выдана";
     if (!book.available) {
         badge.classList.add("book-card__badge--unavailable");
-    }  
+    }
 
     const actions = document.createElement("div");
     actions.className = "book-card__actions";
+
+    const editButton = document.createElement("button");
+    editButton.className = "button button--secondary";
+    editButton.type = "button";
+    editButton.dataset.action = "edit";
+    editButton.dataset.id = String(book.id);
+    editButton.textContent = "Редактировать";
 
     const deleteButton = document.createElement("button");
     deleteButton.className = "button button--danger";
@@ -103,7 +142,7 @@ function renderBooks(books) {
     deleteButton.dataset.id = String(book.id);
     deleteButton.textContent = "Удалить";
 
-    actions.append(deleteButton);
+    actions.append(editButton, deleteButton);
 
     heading.append(title, id);
     card.append(heading, author, meta, badge, actions);
@@ -119,6 +158,43 @@ function buildBookPayload(formData) {
     year: Number(formData.get("year")),
     available: formData.get("available") === "on",
   };
+}
+
+function fillFormWithBook(book) {
+  bookForm.elements.title.value = book.title;
+  bookForm.elements.author.value = book.author;
+  bookForm.elements.genre.value = book.genre;
+  bookForm.elements.year.value = book.year;
+  bookForm.elements.available.checked = Boolean(book.available);
+}
+
+function startEdit(id) {
+  const book = currentBooks.find((item) => String(item.id) === String(id));
+  if (!book) {
+    return;
+  }
+
+  editingId = book.id;
+
+  fillFormWithBook(book);
+  applyFormMode(FORM_MODES.EDIT);
+  setSubmitStatus(MESSAGES.editStarted(book.id));
+
+  renderBooks(currentBooks);
+
+  bookForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  bookForm.elements.title.focus();
+}
+
+function cancelEdit() {
+  editingId = null;
+  bookForm.reset();
+  applyFormMode(FORM_MODES.CREATE);
+  setSubmitStatus(MESSAGES.editCancelled);
+
+  if (currentBooks.length > 0) {
+    renderBooks(currentBooks);
+  }
 }
 
 async function loadBooks() {
@@ -173,6 +249,10 @@ async function deleteBook(id, button) {
       throw new Error(`HTTP ${response.status}`);
     }
 
+    if (String(editingId) === String(id)) {
+      cancelEdit();
+    }
+
     setCollectionStatus("");
     await loadBooks();
   } catch (error) {
@@ -188,7 +268,7 @@ endpointLabel.textContent = API_URL;
 reloadButton.addEventListener("click", loadBooks);
 
 collectionEl.addEventListener("click", (event) => {
-  const button = event.target.closest('button[data-action="delete"]');
+  const button = event.target.closest("button[data-action]");
   if (!button) {
     return;
   }
@@ -198,8 +278,16 @@ collectionEl.addEventListener("click", (event) => {
     return;
   }
 
-  deleteBook(id, button);
+  if (button.dataset.action === "edit") {
+    startEdit(id);
+  }
+
+  if (button.dataset.action === "delete") {
+    deleteBook(id, button);
+  }
 });
+
+cancelEditButton.addEventListener("click", cancelEdit);
 
 bookForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -212,12 +300,17 @@ bookForm.addEventListener("submit", async (event) => {
   const formData = new FormData(bookForm);
   const book = buildBookPayload(formData);
 
+  const isEdit = editingId !== null;
+  const url = isEdit ? `${API_URL}/${editingId}` : API_URL;
+  const method = isEdit ? "PATCH" : "POST";
+
   submitButton.disabled = true;
-  setSubmitStatus(MESSAGES.submitting);
+  cancelEditButton.disabled = true;
+  setSubmitStatus(isEdit ? MESSAGES.saving : MESSAGES.submitting);
 
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
+    const response = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(book),
     });
@@ -226,18 +319,26 @@ bookForm.addEventListener("submit", async (event) => {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const createdBook = await response.json();
-    console.log("Created:", createdBook);
+    const savedBook = await response.json();
+    console.log(isEdit ? "Updated:" : "Created:", savedBook);
 
-    bookForm.reset();
-    setSubmitStatus(`${MESSAGES.submitOk} Номер: #${createdBook.id}`, "success");
+    if (isEdit) {
+      setSubmitStatus(`${MESSAGES.saveOk} Номер: #${savedBook.id}`, "success");
+      editingId = null;
+      bookForm.reset();
+      applyFormMode(FORM_MODES.CREATE);
+    } else {
+      bookForm.reset();
+      setSubmitStatus(`${MESSAGES.submitOk} Номер: #${savedBook.id}`, "success");
+    }
 
     await loadBooks();
   } catch (error) {
-    console.error("Не удалось отправить книгу", error);
-    setSubmitStatus(MESSAGES.submitError, "error");
+    console.error("Не удалось сохранить книгу", error);
+    setSubmitStatus(isEdit ? MESSAGES.saveError : MESSAGES.submitError, "error");
   } finally {
     submitButton.disabled = false;
+    cancelEditButton.disabled = false;
   }
 });
 

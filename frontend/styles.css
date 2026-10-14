@@ -325,6 +325,10 @@ textarea.field__control {
   justify-content: flex-end;
 }
 
+.entry-form__actions {
+  gap: 10px;
+}
+
 .entry-form__hint[data-state="success"] {
   color: #0f766e;
 }
@@ -349,6 +353,11 @@ textarea.field__control {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
+}
+
+.book-card--editing {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 76, 226, 0.15);
 }
 
 [hidden] {
