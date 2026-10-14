@@ -255,6 +255,33 @@ button:disabled {
   background: var(--color-surface);
 }
 
+.field__checkbox {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.field__checkbox:focus-visible {
+  outline: 3px solid rgba(91, 76, 226, 0.28);
+  outline-offset: 3px;
+}
+
+.field--checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.field--checkbox .field__label {
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
 textarea.field__control {
   min-height: 108px;
   resize: vertical;

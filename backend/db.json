@@ -1,11 +1,28 @@
 {
-  "items": [
+  "books": [
     {
-      "id": "starter-1",
-      "title": "Замените демонстрационную запись",
-      "category": "starter",
-      "value": 0,
-      "isActive": true
+      "id": "1",
+      "title": "Мастер и Маргарита",
+      "author": "Михаил Булгаков",
+      "genre": "роман",
+      "year": 1967,
+      "available": true
+    },
+    {
+      "id": "2",
+      "title": "Преступление и наказание",
+      "author": "Фёдор Достоевский",
+      "genre": "роман",
+      "year": 1866,
+      "available": false
+    },
+    {
+      "id": "3",
+      "title": "Дюна",
+      "author": "Фрэнк Герберт",
+      "genre": "фантастика",
+      "year": 1965,
+      "available": true
     }
   ]
 }

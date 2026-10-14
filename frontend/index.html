@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Стартовый интерфейс домашней работы по HTTP и REST API"
+      content="Каталог книг"
     />
-    <title>API-витрина</title>
+    <title>Каталог книг</title>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./script.js" defer></script>
   </head>
@@ -15,10 +15,9 @@
     <header class="page-header">
       <div class="page-header__content">
         <p class="page-header__eyebrow">ДЗ 6 · HTTP и API</p>
-        <h1 class="page-header__title">API-витрина</h1>
+        <h1 class="page-header__title">Каталог</h1>
         <p class="page-header__lead">
-          Выберите тему, замените демонстрационный ресурс и свяжите этот интерфейс
-          с собственным REST API.
+          Каталог книг
         </p>
       </div>
     </header>
@@ -27,8 +26,8 @@
       <section class="panel panel--collection" aria-labelledby="collection-title">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Коллекция</p>
-            <h2 class="panel__title" id="collection-title">Объекты из API</h2>
+            <p class="panel__eyebrow">Каталог книг</p>
+            <h2 class="panel__title" id="collection-title">Книги</h2>
           </div>
 
           <button class="button button--secondary" type="button" data-action="reload">
@@ -38,12 +37,12 @@
 
         <p class="endpoint">
           Endpoint:
-          <code class="endpoint__value" data-ui="endpoint">http://localhost:3000/items</code>
+          <code class="endpoint__value" data-ui="endpoint">http://localhost:3000/books</code>
         </p>
 
         <div class="status" data-ui="status" role="status" aria-live="polite">
           <strong class="status__title">Ожидание подключения</strong>
-          <span class="status__text">Реализуйте первый GET-запрос в script.js.</span>
+          <span class="status__text">Загрузка книг…</span>
         </div>
 
         <div class="collection" data-ui="collection" aria-live="polite"></div>
@@ -53,7 +52,7 @@
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Новая запись</p>
-            <h2 class="panel__title" id="form-title">Добавить объект</h2>
+            <h2 class="panel__title" id="form-title">Добавить книгу</h2>
           </div>
         </div>
 
@@ -66,15 +65,66 @@
               name="title"
               type="text"
               minlength="2"
-              placeholder="Замените подсказку под свою тему"
+              maxlength="120"
+              placeholder="Например, «Дюна»"
               required
             />
           </div>
 
-          <p class="entry-form__hint">
-            Добавьте остальные поля своей модели. Всего должно быть не меньше четырех
-            содержательных свойств помимо id.
-          </p>
+          <div class="field">
+            <label class="field__label" for="entry-author">Автор</label>
+            <input
+              class="field__control"
+              id="entry-author"
+              name="author"
+              type="text"
+              minlength="2"
+              maxlength="120"
+              placeholder="Например, Фрэнк Герберт"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="entry-genre">Жанр</label>
+            <input
+              class="field__control"
+              id="entry-genre"
+              name="genre"
+              type="text"
+              minlength="2"
+              maxlength="60"
+              placeholder="Например, фантастика"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="entry-year">Год издания</label>
+            <input
+              class="field__control"
+              id="entry-year"
+              name="year"
+              type="number"
+              min="1"
+              max="2100"
+              placeholder="1965"
+              required
+            />
+          </div>
+
+          <div class="field field--checkbox">
+            <input
+              class="field__checkbox"
+              id="entry-available"
+              name="available"
+              type="checkbox"
+              checked
+            />
+            <label class="field__label" for="entry-available">
+              Доступна в библиотеке
+            </label>
+          </div>
 
           <div class="entry-form__actions">
             <button class="button button--primary" type="submit" data-action="submit">
