@@ -1,6 +1,7 @@
 "use strict";
 
 const API_URL = "http://localhost:3000/books";
+const REQUEST_TIMEOUT_MS = 8000;
 
 const endpointLabel = document.querySelector('[data-ui="endpoint"]');
 const statusEl = document.querySelector('[data-ui="status"]');
@@ -41,21 +42,49 @@ const MESSAGES = {
   loading: { title: "Загрузка", text: "Запрашиваем книги у сервера…" },
   empty: { title: "Пусто", text: "Сервер вернул пустой список." },
   error: { title: "Ошибка", text: "Не удалось загрузить книги. Проверьте, что API запущен, и нажмите «Обновить»." },
+  timeout: {
+    title: "Тайм-аут",
+    text: `Сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Проверьте соединение и нажмите «Обновить».`,
+  },
   submitting: "Отправляем книгу…",
   submitError: "Не удалось отправить книгу. Данные в форме сохранены, попробуйте ещё раз.",
+  submitTimeout: `Тайм-аут: сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Данные в форме сохранены, попробуйте ещё раз.`,
   submitOk: "Книга добавлена!",
   saving: "Сохраняем изменения…",
   saveError: "Не удалось сохранить изменения. Данные в форме сохранены, попробуйте ещё раз.",
+  saveTimeout: `Тайм-аут при сохранении: сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Данные в форме сохранены, попробуйте ещё раз.`,
   saveOk: "Книга обновлена!",
   deleteConfirm: (title) => `Удалить книгу «${title}»?`,
   deleting: "Удаляем книгу…",
   deleteError: "Не удалось удалить книгу. Карточка осталась, попробуйте ещё раз.",
+  deleteTimeout: `Тайм-аут при удалении: сервер не ответил за ${REQUEST_TIMEOUT_MS / 1000} секунд. Карточка осталась, попробуйте ещё раз.`,
   editStarted: (id) => `Редактирование книги #${id}. Измените поля и нажмите «Сохранить».`,
   editCancelled: "Редактирование отменено.",
 };
 
 let currentBooks = [];
 let editingId = null;
+
+function isTimeoutError(error) {
+  return error instanceof DOMException && error.name === "TimeoutError";
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort(new DOMException("Timeout", "TimeoutError"));
+  }, timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function setState(state, { title = "", text = "" } = {}) {
   statusEl.dataset.state = state;
@@ -202,7 +231,7 @@ async function loadBooks() {
   reloadButton.disabled = true;
 
   try {
-    const response = await fetch(API_URL, { method: "GET" });
+    const response = await fetchWithTimeout(API_URL, { method: "GET" });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -223,6 +252,12 @@ async function loadBooks() {
     });
   } catch (error) {
     console.error("Не удалось загрузить книги", error);
+
+    if (isTimeoutError(error)) {
+      setState(STATE.ERROR, MESSAGES.timeout);
+      return;
+    }
+
     setState(STATE.ERROR, MESSAGES.error);
   } finally {
     reloadButton.disabled = false;
@@ -243,7 +278,7 @@ async function deleteBook(id, button) {
   setCollectionStatus(MESSAGES.deleting);
 
   try {
-    const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    const response = await fetchWithTimeout(`${API_URL}/${id}`, { method: "DELETE" });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -257,7 +292,9 @@ async function deleteBook(id, button) {
     await loadBooks();
   } catch (error) {
     console.error("Не удалось удалить книгу", error);
-    setCollectionStatus(MESSAGES.deleteError, "error");
+
+    const text = isTimeoutError(error) ? MESSAGES.deleteTimeout : MESSAGES.deleteError;
+    setCollectionStatus(text, "error");
   } finally {
     button.disabled = false;
   }
@@ -309,7 +346,7 @@ bookForm.addEventListener("submit", async (event) => {
   setSubmitStatus(isEdit ? MESSAGES.saving : MESSAGES.submitting);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(book),
@@ -335,7 +372,14 @@ bookForm.addEventListener("submit", async (event) => {
     await loadBooks();
   } catch (error) {
     console.error("Не удалось сохранить книгу", error);
-    setSubmitStatus(isEdit ? MESSAGES.saveError : MESSAGES.submitError, "error");
+
+    let text;
+    if (isTimeoutError(error)) {
+      text = isEdit ? MESSAGES.saveTimeout : MESSAGES.submitTimeout;
+    } else {
+      text = isEdit ? MESSAGES.saveError : MESSAGES.submitError;
+    }
+    setSubmitStatus(text, "error");
   } finally {
     submitButton.disabled = false;
     cancelEditButton.disabled = false;
