@@ -12,6 +12,9 @@ const statusTitle = statusEl.querySelector(".status__title");
 const statusText = statusEl.querySelector(".status__text");
 const collectionEl = document.querySelector('[data-ui="collection"]');
 const emptyEl = document.querySelector('[data-ui="empty"]');
+const bookForm = document.querySelector('[data-form="entry"]');
+const submitButton = document.querySelector('[data-action="submit"]');
+const submitStatus = document.querySelector('[data-ui="submit-status"]');
 const reloadButton = document.querySelector('[data-action="reload"]');
 
 const STATE = {
@@ -34,6 +37,11 @@ function setState(state, { title = "", text = "" } = {}) {
 
   statusEl.classList.toggle("status--loading", state === STATE.LOADING);
   statusEl.classList.toggle("status--error",   state === STATE.ERROR);
+}
+
+function setSubmitStatus(text, variant = "info") {
+  submitStatus.textContent = text;
+  submitStatus.dataset.state = variant;
 }
 
 function renderBooks(books) {
@@ -73,6 +81,16 @@ function renderBooks(books) {
     card.append(heading, author, meta, badge);
     collectionEl.append(card);
   });
+}
+
+function buildBookPayload(formData) {
+  return {
+    title: String(formData.get("title") ?? "").trim(),
+    author: String(formData.get("author") ?? "").trim(),
+    genre: String(formData.get("genre") ?? "").trim(),
+    year: Number(formData.get("year")),
+    available: formData.get("available") === "on",
+  };
 }
 
 async function loadBooks() {
@@ -118,5 +136,48 @@ async function loadBooks() {
 endpointLabel.textContent = API_URL;
 
 reloadButton.addEventListener("click", loadBooks);
+
+bookForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!bookForm.checkValidity()) {
+    bookForm.reportValidity();
+    return;
+  }
+
+  const formData = new FormData(bookForm);
+  const book = buildBookPayload(formData);
+
+  submitButton.disabled = true;
+  setSubmitStatus("Отправляем книгу…");
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(book),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const createdBook = await response.json();
+    console.log("Created:", createdBook);
+
+    bookForm.reset();
+    setSubmitStatus(`Книга добавлена! Номер: #${createdBook.id}`, "success");
+
+    await loadBooks();
+  } catch (error) {
+    console.error("Не удалось отправить книгу", error);
+    setSubmitStatus(
+      "Не удалось отправить книгу. Данные в форме сохранены, попробуйте ещё раз.",
+      "error"
+    );
+  } finally {
+    submitButton.disabled = false;
+  }
+});
 
 loadBooks();

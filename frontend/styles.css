@@ -299,6 +299,14 @@ textarea.field__control {
   justify-content: flex-end;
 }
 
+.entry-form__hint[data-state="success"] {
+  color: #0f766e;
+}
+
+.entry-form__hint[data-state="error"] {
+  color: var(--color-danger);
+}
+
 .page-footer {
   padding: 0 24px 48px;
 }

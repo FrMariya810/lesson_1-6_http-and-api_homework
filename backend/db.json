@@ -23,7 +23,23 @@
       "genre": "фантастика",
       "year": 1965,
       "available": true
+    },
+    {
+      "title": "Игра с неверным мужем",
+      "author": "Наталья Николаевна Александрова",
+      "genre": "иронические детективы",
+      "year": 2011,
+      "available": true,
+      "id": "Mr8WPUI6CgI"
+    },
+    {
+      "title": "Бессонница",
+      "author": "Стивен Кинг",
+      "genre": "зарубежное фэнтези",
+      "year": 1994,
+      "available": true,
+      "id": "HumFIN6zmaQ"
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }
-
