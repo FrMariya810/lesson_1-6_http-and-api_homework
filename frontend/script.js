@@ -1,7 +1,3 @@
-// Стартовая точка домашней работы.
-// Спроектируйте модель ресурса, запросы и состояния самостоятельно.
-
-console.log('API storefront starter is ready');
 "use strict";
 
 const API_URL = "http://localhost:3000/books";
@@ -22,6 +18,15 @@ const STATE = {
   SUCCESS: "success",
   EMPTY: "empty",
   ERROR: "error",
+};
+
+const MESSAGES = {
+  loading: { title: "Загрузка", text: "Запрашиваем книги у сервера…" },
+  empty: { title: "Пусто", text: "Сервер вернул пустой список." },
+  error: { title: "Ошибка", text: "Не удалось загрузить книги. Проверьте, что API запущен, и нажмите «Обновить»." },
+  submitting: "Отправляем книгу…",
+  submitError: "Не удалось отправить книгу. Данные в форме сохранены, попробуйте ещё раз.",
+  submitOk: "Книга добавлена!",
 };
 
 function setState(state, { title = "", text = "" } = {}) {
@@ -73,7 +78,7 @@ function renderBooks(books) {
     const badge = document.createElement("span");
     badge.className = "book-card__badge";
     badge.textContent = book.available ? "В наличии" : "Выдана";
-        if (!book.available) {
+    if (!book.available) {
         badge.classList.add("book-card__badge--unavailable");
     }  
 
@@ -94,10 +99,7 @@ function buildBookPayload(formData) {
 }
 
 async function loadBooks() {
-  setState(STATE.LOADING, {
-    title: "Загрузка",
-    text: "Запрашиваем книги у сервера…",
-  });
+  setState(STATE.LOADING, MESSAGES.loading);
   reloadButton.disabled = true;
 
   try {
@@ -110,10 +112,7 @@ async function loadBooks() {
     const books = await response.json();
 
     if (books.length === 0) {
-      setState(STATE.EMPTY, {
-        title: "Пусто",
-        text: "Сервер вернул пустой список.",
-      });
+      setState(STATE.EMPTY, MESSAGES.empty);
       return;
     }
 
@@ -124,10 +123,7 @@ async function loadBooks() {
     });
   } catch (error) {
     console.error("Не удалось загрузить книги", error);
-    setState(STATE.ERROR, {
-      title: "Ошибка",
-      text: "Не удалось загрузить книги. Проверьте, что API запущен, и нажмите «Обновить».",
-    });
+    setState(STATE.ERROR, MESSAGES.error);
   } finally {
     reloadButton.disabled = false;
   }
@@ -149,7 +145,7 @@ bookForm.addEventListener("submit", async (event) => {
   const book = buildBookPayload(formData);
 
   submitButton.disabled = true;
-  setSubmitStatus("Отправляем книгу…");
+  setSubmitStatus(MESSAGES.submitting);
 
   try {
     const response = await fetch(API_URL, {
@@ -166,15 +162,12 @@ bookForm.addEventListener("submit", async (event) => {
     console.log("Created:", createdBook);
 
     bookForm.reset();
-    setSubmitStatus(`Книга добавлена! Номер: #${createdBook.id}`, "success");
+    setSubmitStatus(`${MESSAGES.submitOk} Номер: #${createdBook.id}`, "success");
 
     await loadBooks();
   } catch (error) {
     console.error("Не удалось отправить книгу", error);
-    setSubmitStatus(
-      "Не удалось отправить книгу. Данные в форме сохранены, попробуйте ещё раз.",
-      "error"
-    );
+    setSubmitStatus(MESSAGES.submitError, "error");
   } finally {
     submitButton.disabled = false;
   }
