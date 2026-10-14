@@ -151,6 +151,16 @@ button:disabled {
   background: #edf0ff;
 }
 
+.button--danger {
+  color: #ffffff;
+  background: var(--color-danger);
+  box-shadow: 0 10px 22px rgba(180, 35, 24, 0.22);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: #8f1b12;
+}
+
 .endpoint {
   display: flex;
   flex-wrap: wrap;
@@ -207,6 +217,22 @@ button:disabled {
   gap: 14px;
 }
 
+.collection__hint {
+  min-height: 1.4em;
+  margin: 14px 0 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.collection__hint[data-state="success"] {
+  color: #0f766e;
+}
+
+.collection__hint[data-state="error"] {
+  color: var(--color-danger);
+}
+
 .card {
   min-width: 0;
   padding: 18px;
@@ -255,6 +281,33 @@ button:disabled {
   background: var(--color-surface);
 }
 
+.field__checkbox {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.field__checkbox:focus-visible {
+  outline: 3px solid rgba(91, 76, 226, 0.28);
+  outline-offset: 3px;
+}
+
+.field--checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.field--checkbox .field__label {
+  margin: 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
 textarea.field__control {
   min-height: 108px;
   resize: vertical;
@@ -272,6 +325,18 @@ textarea.field__control {
   justify-content: flex-end;
 }
 
+.entry-form__actions {
+  gap: 10px;
+}
+
+.entry-form__hint[data-state="success"] {
+  color: #0f766e;
+}
+
+.entry-form__hint[data-state="error"] {
+  color: var(--color-danger);
+}
+
 .page-footer {
   padding: 0 24px 48px;
 }
@@ -281,6 +346,18 @@ textarea.field__control {
   color: var(--color-muted);
   font-size: 0.9rem;
   text-align: center;
+}
+
+.book-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.book-card--editing {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 76, 226, 0.15);
 }
 
 [hidden] {
