@@ -7,6 +7,7 @@ const statusEl = document.querySelector('[data-ui="status"]');
 const statusTitle = statusEl.querySelector(".status__title");
 const statusText = statusEl.querySelector(".status__text");
 const collectionEl = document.querySelector('[data-ui="collection"]');
+const collectionStatus = document.querySelector('[data-ui="collection-status"]');
 const emptyEl = document.querySelector('[data-ui="empty"]');
 const bookForm = document.querySelector('[data-form="entry"]');
 const submitButton = document.querySelector('[data-action="submit"]');
@@ -27,7 +28,12 @@ const MESSAGES = {
   submitting: "Отправляем книгу…",
   submitError: "Не удалось отправить книгу. Данные в форме сохранены, попробуйте ещё раз.",
   submitOk: "Книга добавлена!",
+  deleteConfirm: (title) => `Удалить книгу «${title}»?`,
+  deleting: "Удаляем книгу…",
+  deleteError: "Не удалось удалить книгу. Карточка осталась, попробуйте ещё раз.",
 };
+
+let currentBooks = [];
 
 function setState(state, { title = "", text = "" } = {}) {
   statusEl.dataset.state = state;
@@ -47,6 +53,11 @@ function setState(state, { title = "", text = "" } = {}) {
 function setSubmitStatus(text, variant = "info") {
   submitStatus.textContent = text;
   submitStatus.dataset.state = variant;
+}
+
+function setCollectionStatus(text, variant = "info") {
+  collectionStatus.textContent = text;
+  collectionStatus.dataset.state = variant;
 }
 
 function renderBooks(books) {
@@ -82,8 +93,20 @@ function renderBooks(books) {
         badge.classList.add("book-card__badge--unavailable");
     }  
 
+    const actions = document.createElement("div");
+    actions.className = "book-card__actions";
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "button button--danger";
+    deleteButton.type = "button";
+    deleteButton.dataset.action = "delete";
+    deleteButton.dataset.id = String(book.id);
+    deleteButton.textContent = "Удалить";
+
+    actions.append(deleteButton);
+
     heading.append(title, id);
-    card.append(heading, author, meta, badge);
+    card.append(heading, author, meta, badge, actions);
     collectionEl.append(card);
   });
 }
@@ -110,6 +133,7 @@ async function loadBooks() {
     }
 
     const books = await response.json();
+    currentBooks = books;
 
     if (books.length === 0) {
       setState(STATE.EMPTY, MESSAGES.empty);
@@ -129,9 +153,53 @@ async function loadBooks() {
   }
 }
 
+async function deleteBook(id, button) {
+  const book = currentBooks.find((item) => String(item.id) === String(id));
+  if (!book) {
+    return;
+  }
+
+  if (!confirm(MESSAGES.deleteConfirm(book.title))) {
+    return;
+  }
+
+  button.disabled = true;
+  setCollectionStatus(MESSAGES.deleting);
+
+  try {
+    const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    setCollectionStatus("");
+    await loadBooks();
+  } catch (error) {
+    console.error("Не удалось удалить книгу", error);
+    setCollectionStatus(MESSAGES.deleteError, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
 endpointLabel.textContent = API_URL;
 
 reloadButton.addEventListener("click", loadBooks);
+
+collectionEl.addEventListener("click", (event) => {
+  const button = event.target.closest('button[data-action="delete"]');
+  if (!button) {
+    return;
+  }
+
+  const id = button.dataset.id;
+  if (!id) {
+    return;
+  }
+
+  deleteBook(id, button);
+});
 
 bookForm.addEventListener("submit", async (event) => {
   event.preventDefault();

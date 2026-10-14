@@ -151,6 +151,16 @@ button:disabled {
   background: #edf0ff;
 }
 
+.button--danger {
+  color: #ffffff;
+  background: var(--color-danger);
+  box-shadow: 0 10px 22px rgba(180, 35, 24, 0.22);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: #8f1b12;
+}
+
 .endpoint {
   display: flex;
   flex-wrap: wrap;
@@ -205,6 +215,22 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.collection__hint {
+  min-height: 1.4em;
+  margin: 14px 0 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.collection__hint[data-state="success"] {
+  color: #0f766e;
+}
+
+.collection__hint[data-state="error"] {
+  color: var(--color-danger);
 }
 
 .card {
@@ -316,6 +342,13 @@ textarea.field__control {
   color: var(--color-muted);
   font-size: 0.9rem;
   text-align: center;
+}
+
+.book-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 [hidden] {
